@@ -323,7 +323,7 @@ header[data-expanded=false] { width: 0; padding-inline: 0; border: 0; }
 .callouts-before .snapshot-callout::before,
 .callouts-after .snapshot-callout::before { content: ''; display: inline-block; width: 1.3em; height: 1.3em; margin-right: .35em; vertical-align: -.25em; }
 .callouts-before .snapshot-callout::before { background: #dc2626; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 6 12 12M18 6 6 18' stroke='black' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
-.callouts-after .snapshot-callout::before { background: #15803d; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='none' stroke='black' stroke-width='3.5'/%3E%3C/svg%3E") center / contain no-repeat; }
+.callouts-after .snapshot-callout::before { background: #30af5f; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='none' stroke='black' stroke-width='3.5'/%3E%3C/svg%3E") center / contain no-repeat; }
 
 /* Match the template playback controls' touch target size. */
 .comparison-legend button.legend-model { min-height: 44px; min-width: 44px; }
