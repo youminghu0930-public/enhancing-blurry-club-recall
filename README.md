@@ -31,7 +31,7 @@ The existing `vidoes` spelling is preserved. Videos and matching before/after pr
 
 `materials/data/catalog.json`, `materials/data/.generated/`, and `dist/` are ignored generated output. Reload after data changes to refresh metadata. Source videos and predictions are preserved. The server supports byte-range video seeking. The comparison retains linked zoom/pan, shared playback, frame stepping, and lazy loading.
 
-Build a static bundle with `node scripts/build-site.mjs`, then preview with `node scripts/serve.mjs --dist`. Nothing is published automatically.
+Build a static bundle with `node scripts/build-site.mjs`, then preview with `node scripts/serve.mjs --dist`. The GitHub Actions workflow publishes the build after pushes to `main` or `master` once Pages is configured.
 
 ### Snapshot selections
 
@@ -52,3 +52,11 @@ Each joint becomes a highlight; its messages become model-colored callouts. Mult
 ## Title banner
 
 The banner uses `page.banner.video` in `materials/content.json`, currently `down-the-line-0005`. `page.banner.startFrame` is one-based and currently 57. Generated video and predictions start together at that frame and loop from there. The banner uses the original centered cover framing and stripe height, with the complete human and club skeleton enabled. Results remain club-only.
+
+## GitHub Pages deployment
+
+In GitHub, choose **Settings → Pages → Build and deployment → Source → GitHub Actions**. Commit and push this repository, including `.github/workflows/pages.yml` and the source videos and predictions you want published under `materials/data/`.
+
+The workflow runs on pushes to `main` or `master`, or manually from **Actions → Build and deploy GitHub Pages → Run workflow**. It installs Node.js 22 and FFmpeg, runs the tests, builds the catalog, snapshots, banner, and delivery videos, then uploads and deploys only `dist/`.
+
+Generated catalogs, media caches, and `dist/` remain ignored by Git; the runner rebuilds them from committed source materials. The local preview server is not used in production. The first build can take longer while videos are encoded. Deployment status and the published URL appear in the Actions run and repository Pages settings.
