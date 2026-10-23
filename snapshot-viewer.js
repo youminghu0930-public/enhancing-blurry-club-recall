@@ -37,7 +37,7 @@ async function paintSVG(context, source, width, height) {
   const copies = [clone, ...clone.querySelectorAll('*')];
   originals.forEach((node, index) => {
     const style = getComputedStyle(node);
-    for (const property of ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'vector-effect', 'opacity']) {
+    for (const property of ['display', 'visibility', 'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'vector-effect', 'opacity']) {
       copies[index].style.setProperty(property, style.getPropertyValue(property));
     }
   });
