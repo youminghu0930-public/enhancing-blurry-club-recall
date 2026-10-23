@@ -31,6 +31,8 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Build site and media from source
         run: node scripts/build-site.mjs
+      - name: Verify published asset paths
+        run: node scripts/verify-site.mjs
       - name: Upload built site
         uses: actions/upload-pages-artifact@v4
         with:

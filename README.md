@@ -60,3 +60,5 @@ In GitHub, choose **Settings → Pages → Build and deployment → Source → G
 The workflow runs on pushes to `main` or `master`, or manually from **Actions → Build and deploy GitHub Pages → Run workflow**. It installs Node.js 22 and FFmpeg, runs the tests, builds the catalog, snapshots, banner, and delivery videos, then uploads and deploys only `dist/`.
 
 Generated catalogs, media caches, and `dist/` remain ignored by Git; the runner rebuilds them from committed source materials. The local preview server is not used in production. The first build can take longer while videos are encoded. Deployment status and the published URL appear in the Actions run and repository Pages settings.
+
+Generated media is cached locally in `materials/data/.generated/`, but the production build copies referenced assets to `dist/media/` and rewrites the published catalog. GitHub's Pages artifact uploader excludes dot-prefixed directories, so deployed media must use these visible paths. `node scripts/verify-site.mjs` checks that required files exist and media URLs do not rely on hidden paths.

@@ -6,6 +6,7 @@ import { writeFastStart } from './faststart.mjs';
 import { createHash } from 'node:crypto';
 import { encodeDeliveryVideo } from './video-delivery.mjs';
 import { siteFiles } from './site-files.mjs';
+import { deliveryPath, publishedCatalog } from './deployment-paths.mjs';
 
 const catalog = prepareData();
 const destination = path.join(projectRoot, 'dist');
@@ -35,7 +36,7 @@ if (options.compressVideos) {
         fs.writeFileSync(reportFile, JSON.stringify(report));
       }
       if (report.encodedBytes < originalBytes) {
-        const target = path.join(destination, relative);
+        const target = path.join(destination, deliveryPath(relative));
         fs.mkdirSync(path.dirname(target), { recursive: true });
         fs.copyFileSync(cached, target);
         clip.video = relative; encoded.add(relative);
@@ -51,7 +52,7 @@ const files = siteFiles(projectRoot, catalog);
 const videos = new Set(catalog.clips.map(clip => clip.video));
 let remuxed = 0;
 for (const file of files) {
-  const target = path.join(destination, file);
+  const target = path.join(destination, deliveryPath(file));
   fs.mkdirSync(path.dirname(target), { recursive: true });
   if (encoded.has(file)) continue;
   if (videos.has(file)) remuxed += Number(writeFastStart(path.join(projectRoot, file), target));
@@ -60,7 +61,7 @@ for (const file of files) {
     fs.writeFileSync(target, JSON.stringify(JSON.parse(fs.readFileSync(path.join(projectRoot, file), 'utf8'))));
   } else fs.copyFileSync(path.join(projectRoot, file), target);
 }
-fs.writeFileSync(path.join(destination, 'materials/data/catalog.json'), JSON.stringify(catalog));
+fs.writeFileSync(path.join(destination, 'materials/data/catalog.json'), JSON.stringify(publishedCatalog(catalog)));
 if (reports.length) {
   const totals = reports.reduce((sum, report) => ({ originalBytes: sum.originalBytes+report.originalBytes, deliveryBytes: sum.deliveryBytes+report.deliveryBytes }), { originalBytes: 0, deliveryBytes: 0 });
   fs.writeFileSync(path.join(projectRoot, 'materials/data/.generated/video-delivery-report.json'), JSON.stringify({ ...totals, clips: reports }, null, 2));
