@@ -44,20 +44,45 @@ export function routeArrows(box, targets, bones, obstacles = []) {
     return {routes,occluded:routes.filter(route=>route.occluded).length,distance:routes.reduce((sum,route)=>sum+route.distance,0)};
   }).sort((a,b)=>a.occluded-b.occluded || a.distance-b.distance)[0].routes;
 }
-export function placeCallout(width, height, boxWidth, boxHeight, targets, points, bones, occupied = []) {
+export function placeCallout(width, height, boxWidth, boxHeight, targets, points, bones, occupied = [], spotlightRadius = null) {
   const w = Math.min(boxWidth,width-16), h = Math.min(boxHeight,height-16);
-  const candidates = [8,(width-w)/2,width-w-8].flatMap(x=>[8,(height-h)/2,height-h-8].map(y=>({x,y,width:w,height:h})));
+  const candidates = [];
+  const add = (x,y) => candidates.push({ x: Math.max(8,Math.min(width-w-8,x)), y: Math.max(8,Math.min(height-h-8,y)), width:w,height:h });
+  if (spotlightRadius !== null) {
+    // Keep the box center exactly on a target's spotlight circumference.
+    for (const target of targets) for (let step=0;step<360;step++) {
+      const angle=step*Math.PI/180;
+      const x=target.x+Math.cos(angle)*spotlightRadius-w/2;
+      const y=target.y+Math.sin(angle)*spotlightRadius-h/2;
+      if (x>=8 && y>=8 && x+w<=width-8 && y+h<=height-8) candidates.push({x,y,width:w,height:h});
+    }
+  }
+  // Offscreen targets or oversized boxes may leave no visible circle position.
+  if (!candidates.length) {
+  // Search close to each target first, then across the viewport for clear space.
+  for (const target of targets) {
+    for (const gap of [14,24,40,64]) {
+      for (const x of [target.x-w-gap,target.x-w/2,target.x+gap]) {
+        for (const y of [target.y-h-gap,target.y-h/2,target.y+gap]) add(x,y);
+      }
+    }
+  }
+  for (let x=8;x<=width-w-8;x+=12) for (let y=8;y<=height-h-8;y+=12) add(x,y);
+  add(width-w-8,height-h-8);
+  }
   return candidates.map(box => {
+    const padded = { x:box.x-10,y:box.y-10,width:box.width+20,height:box.height+20 };
     const routes = routeArrows(box,targets,bones,occupied);
     const obstruction = points.filter(point=>inside(point,box,12)).length*100000
-      + bones.filter(([a,b])=>inside(a,box)||inside(b,box)||edges(box).some(([c,d])=>segmentsCross(a,b,c,d))).length*100000
-      + occupied.reduce((sum,other)=>sum+overlaps(box,other)*10000,0);
+      + bones.filter(([a,b])=>inside(a,padded)||inside(b,padded)||messageOccludes(a,b,padded)).length*100000
+      + occupied.reduce((sum,other)=>sum+overlaps(padded,other)*10000,0);
     const arrowScore = routes.reduce((sum,route)=>sum+route.score,0);
     return {box,routes,obstruction,arrowScore,score:obstruction+arrowScore};
-  }).sort((a,b)=>a.obstruction-b.obstruction || a.box.y-b.box.y || a.arrowScore-b.arrowScore)[0];
+  }).sort((a,b)=>a.obstruction-b.obstruction || a.arrowScore-b.arrowScore)[0];
 }
 
-export function createSnapshotCallouts(viewport, panel, entry, side) {
+export function createSnapshotCallouts(viewport, panel, entry, side, sharedOccupied = null) {
+  const occupied = sharedOccupied || [];
   const pose = entry[side], key = side === 'before' ? 'general' : 'specialized';
   const groups = new Map();
   for (const name of entry.joints) {
@@ -66,11 +91,11 @@ export function createSnapshotCallouts(viewport, panel, entry, side) {
     if (!groups.has(text)) groups.set(text,[]);
     groups.get(text).push(name);
   }
-  if (!groups.size) return () => {};
+  if (!groups.size) return () => { if (side === 'before' || !sharedOccupied) occupied.length = 0; };
   const ns = 'http://www.w3.org/2000/svg';
-  const arrows = document.createElementNS(ns,'svg'); arrows.classList.add('snapshot-callout-arrows'); arrows.setAttribute('aria-hidden','true');
+  const arrows = document.createElementNS(ns,'svg'); arrows.classList.add('snapshot-callout-arrows', `callouts-${side}`); arrows.setAttribute('aria-hidden','true');
   viewport.append(arrows);
-  const rail = document.createElement('div'); rail.className='snapshot-callout-rail'; panel.append(rail);
+  const rail = document.createElement('div'); rail.className=`snapshot-callout-rail callouts-${side}`; panel.append(rail);
   const items = [...groups].map(([text,names])=>{
     const box = document.createElement('p'); box.className='snapshot-callout'; box.textContent=text; rail.append(box);
     return {box,names};
@@ -78,19 +103,24 @@ export function createSnapshotCallouts(viewport, panel, entry, side) {
   return state => {
     const width=viewport.clientWidth,height=viewport.clientHeight;
     const project = point=>projectSnapshotPoint(point,entry.width,entry.height,width,height,state);
-    const points=spotlightPoints(pose,pose.joints).map(project);
-    const bones=poseConnections(side==='before'?0:1).flatMap(names=>{
-      const ends=spotlightPoints(pose,names); return ends.length===2?[[project(ends[0]),project(ends[1])]]:[];
+    const points=['before','after'].flatMap(model => entry[model] ? spotlightPoints(entry[model],entry[model].joints.filter(name => name.startsWith('golf_club_'))) : []).map(project);
+    const bones=['before','after'].flatMap(model => {
+      const modelPose=entry[model];
+      return modelPose ? poseConnections(model==='before'?0:1).flatMap(names=>{
+        const ends=spotlightPoints(modelPose,names); return ends.length===2?[[project(ends[0]),project(ends[1])]]:[];
+      }) : [];
     });
     // Below-image notes are the fallback when there is too little room to avoid the golfer.
     const external=width<250;
     rail.classList.toggle('is-external',external);
     rail.style.top=external?'':`${viewport.offsetTop}px`;
     arrows.setAttribute('viewBox',`0 0 ${width} ${height}`); arrows.replaceChildren();
-    const occupied=[];
+    if (side === 'before' || !sharedOccupied) occupied.length = 0;
     items.forEach(({box,names},index)=>{
       const targets=spotlightPoints(pose,names).map(project);
-      box.style.width=`${external?width:Math.min(164,width*.45)}px`;
+      box.style.width=external?'100%':'max-content';
+      box.style.maxWidth=`${external?width:Math.min(200,width*.45)}px`;
+      box.style.padding='5px 8px';
       const measured={width:box.offsetWidth,height:box.offsetHeight};
       let placement;
       if (external) {
@@ -98,7 +128,7 @@ export function createSnapshotCallouts(viewport, panel, entry, side) {
         const anchor={x:width*(index+1)/(items.length+1),y:height-2};
         placement={routes:targets.map(target=>({path:[anchor,target]}))};
       } else {
-        placement=placeCallout(width,height,measured.width,measured.height,targets,points,bones,occupied);
+        placement=placeCallout(width,height,measured.width,measured.height,targets,points,bones,occupied, Math.max(entry.width,entry.height)/16 * Math.min(width/entry.width,height/entry.height) * state.zoom);
         occupied.push(placement.box); box.style.left=`${placement.box.x}px`;box.style.top=`${placement.box.y}px`;
       }
       for (const {path} of placement.routes) {

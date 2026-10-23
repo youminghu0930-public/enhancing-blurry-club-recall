@@ -1,11 +1,39 @@
 {
+    "0000":{
+        "203": {
+            "golf_club_head": {
+                "before":"Misplaced club head",
+                "after":"Correct club head location"
+            }
+        },
+        "212": {
+            "golf_club_head": {
+                "before":"Slightly offset from the club head",
+                "after":"Correct club head location"
+            }
+        }
+    },
+    "0013":{
+        "160": {
+            "golf_club_head": {
+                "before":"Misplaced club head",
+                "after":"Correct club head location"
+            }
+        }
+    },
     "0027":{
-        "130": {
-            "title":"Elbow flexion during a down-the-line downswing", 
-            "joints":["golf_club_head"],
-            "message_box":{
-                "before":"The general-purpose model underestimates the elbow bend, predicting a straighter arm than the reference pose.",
-                "after":"The golf-specific model better captures elbow flexion and arm alignment."
+        "215": {
+            "golf_club_head": {
+                "before":"Prediction falls on the shaft",
+                "after":"Closer to the club head, visible as a faint reflection"
+            }
+        }
+    },
+    "0019-5":{
+        "111": {
+            "golf_club_head": {
+                "before":"Misplaced club head",
+                "after":"Correct club head location"
             }
         }
     }

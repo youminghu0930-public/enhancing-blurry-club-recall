@@ -61,3 +61,16 @@ test('snapshot focus ignores unavailable points and falls back to the available 
   entry.after.pred = [[[30, 40, -1]]];
   assert.equal(snapshotFocus(entry), null);
 });
+
+test('direct joint definitions preserve per-model callouts and optional titles', () => {
+  const [item] = snapshotItems({ '0000': { 203: {
+    title: 'Blurred club',
+    golf_club_head: { before: 'Fail', after: 'Success' },
+    golf_club_shaft: { after: 'Detected shaft' },
+  } } }, [{ id: '0000', key: 'face-on-0000', frameCount: 318 }]);
+  assert.equal(item.frame, 203);
+  assert.equal(item.title, 'Blurred club');
+  assert.deepEqual(item.joints, ['golf_club_head', 'golf_club_shaft']);
+  assert.deepEqual(item.explanations.golf_club_head, { general: 'Fail', specialized: 'Success' });
+  assert.deepEqual(item.explanations.golf_club_shaft, { general: '', specialized: 'Detected shaft' });
+});

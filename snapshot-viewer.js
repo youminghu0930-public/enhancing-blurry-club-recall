@@ -1,6 +1,7 @@
+import { skeletonView } from './snapshot-framing.js';
 import { createPoseOverlay } from './pose-overlay.js';
-import { snapshotItems, spotlightPoints, snapshotFocus } from './snapshot-data.js';
-import { installLinkedView, focusedView } from './linked-view.js';
+import { snapshotItems, spotlightPoints } from './snapshot-data.js';
+import { installLinkedView } from './linked-view.js';
 import { comparisonLabels } from './model-labels.js';
 import { createSnapshotCallouts } from './snapshot-callouts.js';
 
@@ -96,7 +97,7 @@ function addShade(viewport, entry, side) {
     context.fillRect(0, 0, entry.width, entry.height);
     context.globalCompositeOperation = 'destination-out';
     context.fillStyle = '#000';
-    for (const [x, y] of spotlightPoints(entry[side], entry.joints)) {
+    for (const [x, y] of ['before', 'after'].flatMap(model => spotlightPoints(entry[model], entry.joints))) {
       context.beginPath(); context.arc(x, y, Math.max(entry.width, entry.height)/16, 0, Math.PI*2); context.fill();
     }
   };
@@ -148,11 +149,21 @@ export async function mountSnapshots(root, copy) {
     const viewports = [], scenes = [], overlays = [], shades = [], panels = [], callouts = [];
     const images = [], errors = [], previews = [];
     let viewState = { zoom: 1, x: 0, y: 0 }, loading, focusReady = false, manuallyAdjusted = false;
-    for (const [side, viewIndex] of [['before', 0], ['after', 1]]) {
+    for (const [side, viewIndex] of [['before', 0]]) {
       const panel = make('div', undefined, 'comparison-panel');
       panel.dataset.model = viewIndex === 0 ? 'general' : 'golf';
       const heading = make('div', undefined, 'panel-heading');
-      heading.append(make('strong', copy[side]));
+      heading.classList.add('comparison-legend');
+      for (const [i, name] of ['before', 'after'].entries()) {
+        const item = make('button', copy[name], `legend-model legend-model-${i}`);
+        item.type = 'button'; item.setAttribute('aria-pressed', 'true');
+        item.onclick = () => {
+          const visible = item.getAttribute('aria-pressed') !== 'true';
+          item.setAttribute('aria-pressed', String(visible));
+          panel.dataset[i === 0 ? 'hideBefore' : 'hideAfter'] = String(!visible);
+        };
+        heading.append(item);
+      }
       const viewport = make('div', undefined, 'pose-viewport snapshot-image-window');
       const image = make('img');
       image.width = entry.width; image.height = entry.height;
@@ -168,8 +179,12 @@ export async function mountSnapshots(root, copy) {
       panel.append(heading, viewport); comparison.append(panel);
       panels.push(panel);
     }
-    const defaultFocus = () => focusedView({ point: snapshotFocus(entry), width: entry.width, height: entry.height,
-      viewportWidth: viewports[0].clientWidth, viewportHeight: viewports[0].clientHeight, zoom: 2 });
+    const defaultFocus = () => {
+      const sets = ['before', 'after'].map(side => entry[side]).filter(Boolean);
+      const combined = { joints: sets.flatMap((pose, index) => pose.joints.map(name => `${name}_${index}`)), pred: [sets.flatMap(pose => pose.pred[0])] };
+      return skeletonView({ pose: combined, width: entry.width, height: entry.height,
+        viewportWidth: viewports[0].clientWidth, viewportHeight: viewports[0].clientHeight });
+    };
     const linkedView = installLinkedView(viewports, scenes, state => {
       viewState = state;
       overlays.forEach(overlay => overlay.setTransform(state));
@@ -182,7 +197,7 @@ export async function mountSnapshots(root, copy) {
     let previewKey, previewJob = Promise.resolve();
     previewPainters.push(() => {
       previewJob = previewJob.catch(() => {}).then(async () => {
-      const key = JSON.stringify([viewState, ...viewports.map(viewport => [viewport.clientWidth, viewport.clientHeight])]);
+      const key = JSON.stringify([viewState, panels[0].dataset.hideBefore, panels[0].dataset.hideAfter, ...viewports.map(viewport => [viewport.clientWidth, viewport.clientHeight])]);
       if (previewKey === key) return;
       await Promise.all(viewports.map(async (viewport, i) => {
         const width = viewport.clientWidth, height = viewport.clientHeight;
@@ -199,10 +214,10 @@ export async function mountSnapshots(root, copy) {
         context.scale(viewState.zoom, viewState.zoom);
         context.drawImage(images[i], (width-entry.width*fit)/2, (height-entry.height*fit)/2, entry.width*fit, entry.height*fit);
         context.restore();
-        for (const layer of viewport.querySelectorAll('.pose-overlay')) await paintSVG(context, layer, width, height);
+        for (const layer of viewport.querySelectorAll('.pose-overlay')) if (getComputedStyle(layer).display !== 'none') await paintSVG(context, layer, width, height);
         // Copy the actual live shading pixels; never re-export an SVG mask.
         context.drawImage(viewport.querySelector('.snapshot-shade'), 0, 0, width, height);
-        for (const layer of viewport.querySelectorAll('.snapshot-callout-arrows')) await paintSVG(context, layer, width, height);
+        for (const layer of viewport.querySelectorAll('.snapshot-callout-arrows')) if (getComputedStyle(layer).display !== 'none') await paintSVG(context, layer, width, height);
       }));
       previewKey = key;
       });
@@ -223,13 +238,16 @@ export async function mountSnapshots(root, copy) {
         }));
         focusReady = true;
         linkedView.setView(defaultFocus());
+        const annotationPositions = [];
         for (const [viewIndex, side] of ['before', 'after'].entries()) {
-          const overlay = createPoseOverlay(viewports[viewIndex], viewIndex, copy, new Set(entry.joints.map(name => `joint:${name}`)), () => {});
+          const overlay = createPoseOverlay(viewports[0], viewIndex, copy, new Set(entry.joints.map(name => `joint:${name}`)), () => {});
           overlay.setPose(entry[side], entry.width, entry.height); overlay.render(0); overlay.setTransform(viewState);
           overlays.push(overlay);
-          const updateShade = addShade(viewports[viewIndex], entry, side);
-          updateShade(viewState); shades.push(updateShade);
-          const updateCallouts = createSnapshotCallouts(viewports[viewIndex], panels[viewIndex], entry, side);
+          if (viewIndex === 0) {
+            const updateShade = addShade(viewports[0], entry, side);
+            updateShade(viewState); shades.push(updateShade);
+          }
+          const updateCallouts = createSnapshotCallouts(viewports[0], panels[0], entry, side, annotationPositions);
           updateCallouts(viewState); callouts.push(updateCallouts);
         }
         if (!entry.image) {
@@ -263,7 +281,7 @@ export async function mountSnapshots(root, copy) {
   });
   const details = make('div', undefined, 'snapshot-details');
   const credit = make('p', undefined, 'snapshot-source');
-  details.append(credit, make('p', copy.panZoomHint, 'keyboard-hint'), make('p', labels.inspectionHint, 'keyboard-hint'));
+  details.append(credit, make('p', copy.legendHint, 'keyboard-hint'), make('p', copy.panZoomHint, 'keyboard-hint'), make('p', labels.inspectionHint, 'keyboard-hint'));
   root.replaceChildren(shell, dots, details);
 
   const count = cards.length;

@@ -10,7 +10,9 @@ export function snapshotItems(config, clips, { onWarning } = {}) {
     const clip = matches[0];
     for (const [value, sample] of Object.entries(frames)) {
       const legacy = Array.isArray(sample);
-      const definitions = !legacy && sample?.joints;
+      const definitions = !legacy && (sample?.joints ?? (sample && typeof sample === 'object'
+        ? Object.fromEntries(Object.entries(sample).filter(([name, value]) => !['title', 'message_box'].includes(name) && value && typeof value === 'object' && !Array.isArray(value)))
+        : null));
       const joints = legacy ? sample : Array.isArray(definitions) ? definitions : definitions && typeof definitions === 'object' ? Object.keys(definitions) : [];
       const frame = Number(value);
       const error = !Number.isInteger(frame) || frame < 0 || frame >= clip.frameCount
@@ -25,8 +27,8 @@ export function snapshotItems(config, clips, { onWarning } = {}) {
       if (!legacy) {
         entry.title = typeof sample.title === 'string' ? sample.title : '';
         entry.explanations = Object.fromEntries(joints.map(name => [name, {
-          general: typeof definitions[name]?.general === 'string' ? definitions[name].general : typeof (sample.message_box?.before ?? sample.message_box?.general) === 'string' ? (sample.message_box.before ?? sample.message_box.general) : '',
-          specialized: typeof definitions[name]?.specialized === 'string' ? definitions[name].specialized : typeof (sample.message_box?.after ?? sample.message_box?.specialized) === 'string' ? (sample.message_box.after ?? sample.message_box.specialized) : '',
+          general: typeof (definitions[name]?.before ?? definitions[name]?.general) === 'string' ? (definitions[name].before ?? definitions[name].general) : typeof (sample.message_box?.before ?? sample.message_box?.general) === 'string' ? (sample.message_box.before ?? sample.message_box.general) : '',
+          specialized: typeof (definitions[name]?.after ?? definitions[name]?.specialized) === 'string' ? (definitions[name].after ?? definitions[name].specialized) : typeof (sample.message_box?.after ?? sample.message_box?.specialized) === 'string' ? (sample.message_box.after ?? sample.message_box.specialized) : '',
         }]));
       }
       entries.push(entry);

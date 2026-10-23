@@ -47,34 +47,35 @@ export async function mountViewer(root, copy, { priorityReady } = {}) {
   const selected = new Set();
   const overlays = [];
   const viewports = [], scenes = [];
-  for (const label of [copy.before, copy.after]) {
-    const panel = make('div', undefined, 'comparison-panel');
-    panel.dataset.model = canvases.length === 0 ? 'general' : 'golf';
-    const heading = make('div', undefined, 'panel-heading');
-    heading.append(make('strong', label));
-    const canvas = make('canvas');
-    canvas.width = 360;
-    canvas.height = 640;
-    canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', label);
-    const viewport = make('div', undefined, 'pose-viewport');
-    const scene = make('div', undefined, 'pose-scene');
-    scene.append(canvas); viewport.append(scene);
-    viewports.push(viewport); scenes.push(scene);
-    const overlay = createPoseOverlay(viewport, canvases.length, copy, selected, (key, additive) => {
-      if (key === null) {
-        selected.clear(); overlays.forEach(item => item.updateSelection()); return;
-      }
-      const remove = selected.has(key) && (additive || selected.size === 1);
-      if (!additive) selected.clear();
-      if (remove) selected.delete(key); else selected.add(key);
-      for (const item of overlays) item.updateSelection();
-    });
-    overlays.push(overlay);
-    panel.append(heading, viewport);
-    screens.append(panel);
-    canvases.push(canvas);
+  const panel = make('div', undefined, 'comparison-panel');
+  const heading = make('div', undefined, 'panel-heading comparison-legend');
+  for (const [index, label] of [copy.before, copy.after].entries()) {
+    const item = make('button', label, `legend-model legend-model-${index}`);
+    item.type = 'button'; item.setAttribute('aria-pressed', 'true');
+    item.onclick = () => {
+      const visible = item.getAttribute('aria-pressed') !== 'true';
+      item.setAttribute('aria-pressed', String(visible));
+      panel.dataset[index === 0 ? 'hideBefore' : 'hideAfter'] = String(!visible);
+    };
+    heading.append(item);
   }
+  const canvas = make('canvas'); canvas.width = 360; canvas.height = 640;
+  canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', `${copy.before} / ${copy.after}`);
+  const viewport = make('div', undefined, 'pose-viewport');
+  const scene = make('div', undefined, 'pose-scene'); scene.append(canvas); viewport.append(scene);
+  viewports.push(viewport); scenes.push(scene); canvases.push(canvas);
+  for (let index = 0; index < 2; index++) {
+    overlays.push(createPoseOverlay(viewport, index, copy, selected, (key, additive) => {
+      if (key === null) selected.clear();
+      else {
+        const remove = selected.has(key) && (additive || selected.size === 1);
+        if (!additive) selected.clear();
+        if (remove) selected.delete(key); else selected.add(key);
+      }
+      overlays.forEach(item => item.updateSelection());
+    }));
+  }
+  panel.append(heading, viewport); screens.append(panel);
   const video = document.createElement('video');
   video.muted = true;
   video.defaultMuted = true;
@@ -128,7 +129,7 @@ export async function mountViewer(root, copy, { priorityReady } = {}) {
   const credit = make('div', undefined, 'video-credit');
   credit.hidden = true;
   const details = make('div', undefined, 'video-details');
-  details.append(credit, make('p', copy.panZoomHint, 'keyboard-hint'), make('p', copy.keyboard, 'keyboard-hint'), make('p', copy.inspectionHint, 'keyboard-hint'));
+  details.append(credit, make('p', copy.legendHint, 'keyboard-hint'), make('p', copy.panZoomHint, 'keyboard-hint'), make('p', copy.keyboard, 'keyboard-hint'), make('p', copy.inspectionHint, 'keyboard-hint'));
   player.append(screens, slider, meta, controls, zoomControls, video);
   const sidebar = make('aside', undefined, 'video-sidebar');
   const sidebarHeading = make('div', undefined, 'sidebar-heading');
@@ -193,8 +194,9 @@ export async function mountViewer(root, copy, { priorityReady } = {}) {
     for (const [index, canvas] of canvases.entries()) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      overlays[index].render(renderedFrame);
+
     }
+    overlays.forEach(overlay => overlay.render(renderedFrame));
     updateFrameLabel();
   }
   function stop() {

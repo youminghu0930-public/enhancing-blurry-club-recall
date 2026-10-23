@@ -38,7 +38,7 @@ export async function mountBanner(root, settings, copy) {
   }, { once: true });
   poster.src=video.poster;
   viewport.append(video,poster);
-  const overlay=createPoseOverlay(viewport,1,copy,new Set(),()=>{},{interactive:false});
+  const overlay=createPoseOverlay(viewport,1,copy,new Set(),()=>{},{interactive:false,fullBody:true});
   const skeleton=viewport.querySelector('.pose-overlay');
   const fitOverlay=()=>{
     const contain=Math.min(viewport.clientWidth/clip.width,viewport.clientHeight/clip.height);
@@ -54,7 +54,7 @@ export async function mountBanner(root, settings, copy) {
   let presentedTime=0;
   let callback, visible=false, loaded=false, wanted=!matchMedia('(prefers-reduced-motion: reduce)').matches;
   const draw=time=>{
-    const frame=loaded&&poster.hidden?bannerFrameAt(clip.times,time):0;
+    const frame=loaded&&poster.hidden?bannerFrameAt(asset?.times ?? clip.times,time):0;
     overlay.render(frame); viewport.dataset.frame=String(frame);
   };
   const cancel=()=>{

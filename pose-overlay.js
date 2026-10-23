@@ -1,4 +1,5 @@
 import { clippedBone, overlayTransform } from './pose-geometry.js';
+const viewportInspectors = new WeakMap();
 const svgNS = 'http://www.w3.org/2000/svg';
 const bodyEdges = [
   ['left_shoulder', 'right_shoulder'], ['left_shoulder', 'left_elbow'], ['left_elbow', 'left_wrist'],
@@ -10,8 +11,9 @@ const headEdges = [
   [['nose', 'left_eye'], ['nose', 'right_eye'], ['left_eye', 'left_ear'], ['right_eye', 'right_ear'], ['left_ear', 'left_shoulder'], ['right_ear', 'right_shoulder']],
   [['nose', 'left_ear'], ['nose', 'right_ear'], ['nose', 'atlas'], ['nose', 'top_head']]
 ];
+const clubEdges = [['golf_club_grip', 'golf_club_shaft'], ['golf_club_shaft', 'golf_club_heel'], ['golf_club_heel', 'golf_club_head']];
 const usable = point => point && Number.isFinite(point[0]) && Number.isFinite(point[1]) && (point[2] === undefined || point[2] >= 0) && (point[0] !== 0 || point[1] !== 0);
-export const poseConnections = index => [...bodyEdges, ...headEdges[1], ['golf_club_grip', 'golf_club_shaft'], ['golf_club_shaft', 'golf_club_heel'], ['golf_club_heel', 'golf_club_head']];
+export const poseConnections = () => clubEdges;
 const svg = (tag, attributes = {}) => {
   const node = document.createElementNS(svgNS, tag);
   for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, value);
@@ -19,7 +21,7 @@ const svg = (tag, attributes = {}) => {
 };
 const format = (text, values) => text.replace(/\{(\w+)\}/g, (_, key) => values[key]);
 
-export function createPoseOverlay(viewport, index, copy, selected, onSelect, { interactive = true } = {}) {
+export function createPoseOverlay(viewport, index, copy, selected, onSelect, { interactive = true, fullBody = false } = {}) {
   const view = index ? copy.after : copy.before;
   const overlay = svg('svg', { class: `pose-overlay pose-overlay-${index}`, role: 'group', 'aria-label': format(copy.skeletonLabel, { view }), preserveAspectRatio: 'xMidYMid meet' });
   if (!interactive) overlay.setAttribute('aria-hidden', 'true');
@@ -38,6 +40,7 @@ export function createPoseOverlay(viewport, index, copy, selected, onSelect, { i
     tooltip.style.top = `${Math.max(8, y - rect.top - tooltip.offsetHeight - 14)}px`;
   }
   function hitTest(event) {
+    if (getComputedStyle(overlay).display === 'none') return;
     const matrix = geometry.getScreenCTM();
     if (!matrix) return;
     const inverse = matrix.inverse();
@@ -58,16 +61,24 @@ export function createPoseOverlay(viewport, index, copy, selected, onSelect, { i
         if (distance < boneDistance) { bone = item; boneDistance = distance; }
       }
     }
+    if (joint) joint.hitDistance = jointDistance;
+    if (bone) bone.hitDistance = boneDistance;
     return joint || bone;
   }
   const clearHover = () => {
     hovered?.group.classList.remove('is-hovered'); hovered = undefined; tooltip.hidden = true;
     viewport.style.cursor = '';
   };
+  const inspectors = viewportInspectors.get(viewport) || [];
+  viewportInspectors.set(viewport, inspectors);
+  const inspector = { hitTest }; inspectors.push(inspector);
+  const winner = event => inspectors.map(owner => ({ owner, item: owner.hitTest(event) })).filter(result => result.item).sort((a,b) => a.item.hitDistance-b.item.hitDistance)[0];
   viewport.addEventListener('pointermove', event => {
     if (!interactive) return;
     if (event.buttons || viewport.dataset.dragging === 'true') { clearHover(); return; }
-    const item = hitTest(event);
+    const result = winner(event);
+    if (result?.owner !== inspector) { clearHover(); return; }
+    const item = result.item;
     if (hovered !== item) { clearHover(); hovered = item; }
     if (!item) return;
     item.group.classList.add('is-hovered'); viewport.style.cursor = 'pointer';
@@ -79,6 +90,10 @@ export function createPoseOverlay(viewport, index, copy, selected, onSelect, { i
   viewport.addEventListener('wheel', clearHover, { passive: true });
   viewport.addEventListener('click', event => {
     if (!interactive) return;
+    if (event.detail !== 0) {
+      const result = winner(event);
+      if (result ? result.owner !== inspector : inspectors[0] !== inspector) return;
+    } else if (!features.some(item => item.group === event.target.closest('.pose-feature'))) return;
     // Resolve overlapping hit areas by distance, rather than SVG stacking order.
     const item = event.detail === 0
       ? features.find(item => item.group === event.target.closest('.pose-feature'))
@@ -111,14 +126,14 @@ export function createPoseOverlay(viewport, index, copy, selected, onSelect, { i
       radius = Math.max(width, height)/190;
       overlay.setAttribute('viewBox', `0 0 ${width} ${height}`);
       const names = new Set(pose.joints);
-      for (const [a, b] of [...bodyEdges, ...headEdges[1], ['golf_club_grip', 'golf_club_shaft'], ['golf_club_shaft', 'golf_club_heel'], ['golf_club_heel', 'golf_club_head']]) {
+      for (const [a, b] of (fullBody ? [...bodyEdges, ...headEdges[1], ...clubEdges] : poseConnections())) {
         if (!names.has(a) || !names.has(b)) continue;
         const label = format(copy.connectionLabel, { from: nameOf(a), to: nameOf(b) });
         const item = feature(`bone:${[a, b].sort().join(':')}`, label, [svg('line', { class: 'bone-hit' }), svg('line', { class: 'bone-line' })]);
         features.push({ ...item, a, b });
       }
       // Joint targets sit above bone targets so endpoints remain easy to select.
-      for (const name of pose.joints) {
+      for (const name of pose.joints.filter(name => fullBody || name.startsWith('golf_club_'))) {
         const side = name.startsWith('left_') ? '#3b82f6' : name.startsWith('right_') ? '#ef4444' : 'var(--pose-color)';
         const item = feature(`joint:${name}`, nameOf(name), [svg('circle', { class: 'joint-hit', r: radius }), svg('circle', { class: 'joint-dot', r: radius*.65, fill: side }), svg('circle', { class: 'joint-ring', r: radius, fill: 'none' })]);
         features.push({ ...item, name });

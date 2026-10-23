@@ -29,10 +29,11 @@ test('arrows stay straight and retain offscreen joint coordinates', () => {
   assert.deepEqual(routeArrow({x:10,y:10,width:100,height:60},projected,[]).path.at(-1),projected);
 });
 
-test('callouts prefer clear upper space even when the joint is lower down', () => {
+test('callouts stay close to lower joints when nearby space is clear', () => {
   const target={x:200,y:390};
   const placement=placeCallout(400,440,140,70,[target],[target],[]);
-  assert.equal(placement.box.y,8);
+  assert.ok(placement.box.y > 280);
+  assert.equal(placement.obstruction,0);
 });
 
 test('upper-space preference does not put a box over the skeleton', () => {
@@ -69,4 +70,13 @@ test('message occlusion counts interior traversal, not edge attachment', () => {
   const box={x:100,y:100,width:100,height:100};
   assert.equal(messageOccludes({x:150,y:200},{x:150,y:300},box),false);
   assert.equal(messageOccludes({x:150,y:100},{x:150,y:300},box),true);
+});
+
+
+test('spotlight placement keeps the message center on the circle border', () => {
+  const target={x:200,y:220}, radius=65;
+  const result=placeCallout(400,440,60,28,[target],[target],[],[],radius);
+  const center={x:result.box.x+result.box.width/2,y:result.box.y+result.box.height/2};
+  assert.ok(Math.abs(Math.hypot(center.x-target.x,center.y-target.y)-radius)<1e-8);
+  assert.equal(result.obstruction,0);
 });

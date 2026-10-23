@@ -1,13 +1,16 @@
 {
   "page": {
     "title": "Enhancing Blurry Club Recall",
-    "description": "Improving golf club detection recall when the club is blurred by motion.",
-    "eyebrow": "Computer vision \u00b7 Golf swing analysis",
-    "role": "",
+    "description": "Applying state-of-the-art segmentation and a custom heuristic augmentation method to improve blurred club head detection without changing inference speed.",
+    "eyebrow": "Computer vision · Golf swing analysis",
+    "role": "My role: I applied a state-of-the-art segmentation model, designed a heuristic method to synthesize motion-blurred clubs, and built the augmentation pipeline that improved detection on difficult footage.",
     "navigationLabel": "Project sections",
     "navigationToggle": "Toggle section navigation",
     "banner": {
-      "enabled": false
+      "enabled": true,
+      "video": "down-the-line-0026-1",
+      "startFrame": 73,
+      "label": "Golf swing pose and club detection"
     },
     "mainPage": {
       "label": "Return to main page",
@@ -20,59 +23,98 @@
       "id": "goal",
       "title": "Goal",
       "paragraphs": [
-        "Content coming soon."
+        "Make club head detection more reliable under motion blur, especially in face-on footage and around impact, where rapid club movement makes detection difficult. These moments occupy only a small part of a swing but are critical for golf swing measurement.",
+        "The previous model could detect the club head in clearer frames but often missed it under blur. The goal was to improve recall across both high-quality footage and videos captured at lower frame rates or in poor lighting. Because missed detections were the larger practical problem, some loss of precision was considered acceptable."
       ]
     },
     {
       "id": "difficulty",
       "title": "Challenges",
       "paragraphs": [
-        "Content coming soon."
+        "Blurred club images accounted for only about 5% of the available data. Manually selecting these rare frames was slow and costly, and collecting more footage would produce the same imbalance.",
+        "I needed a practical way to turn the existing dataset into more useful training examples. The implementation challenge was to isolate the club, synthesize varied levels of blur, and filter out low-quality results so the augmented data remained useful for training."
       ]
     },
     {
       "id": "accomplishment",
       "title": "Contributions and Outcomes",
-      "paragraphs": [
-        "Content coming soon."
+      "metrics": [
+        {
+          "value": "≥2×",
+          "label": "Club head training examples after filtering"
+        },
+        {
+          "value": "≈30%",
+          "label": "Improvement on difficult examples"
+        },
+        {
+          "value": "Unchanged",
+          "label": "Inference speed"
+        }
+      ],
+      "items": [
+        "Applied state-of-the-art segmentation: I used a segmentation model to extract the club from existing frames, creating the components needed for targeted augmentation.",
+        "Designed a heuristic synthesis method: I developed a custom method to combine these components into motion-blurred club images. For each original frame, I generated three additional versions with mild, medium, and heavy blur to expand coverage of the failure cases.",
+        "Built the training-data pipeline: I generated the augmented examples and filtered out low-quality synthetic results. The resulting club head training data grew to at least twice its original size, using footage we already had.",
+        "Connected implementation to detection quality: Training with the augmented data enabled the final model to detect approximately 30% more difficult examples, with no substantial observed decrease in precision. The model architecture stayed the same, preserving inference speed."
       ]
     },
     {
       "id": "influence",
       "title": "Lasting Impact",
-      "paragraphs": [
-        "Content coming soon."
+      "subsections": [
+        {
+          "title": "A practical solution to a data bottleneck",
+          "paragraphs": [
+            "I combined an available segmentation model with a task-specific heuristic method to address a concrete detector failure. This made it possible to expand rare blur cases from existing footage, reducing reliance on slow manual selection and additional data collection."
+          ]
+        },
+        {
+          "title": "Improvement through training data",
+          "paragraphs": [
+            "The main outcome was a more capable detector using the same architecture and inference budget. The observed improvement, with no substantial precision loss or observed overfitting, showed that the augmentation was useful for the difficult footage we evaluated."
+          ]
+        },
+        {
+          "title": "A concrete next iteration",
+          "paragraphs": [
+            "I would improve the synthesis pipeline by using an inpainting model to reconstruct the background where the original club was removed. Cleaner backgrounds could reduce compositing artifacts and make the augmented images more realistic."
+          ]
+        }
       ]
     },
     {
       "id": "result",
       "title": "Results",
-      "paragraphs": [],
+      "paragraphs": [
+        "The segmentation-guided augmentation pipeline enabled the final model to detect approximately 30% more difficult examples, with no substantial observed loss of precision. This improvement came from the training-data workflow while retaining the same model architecture and inference speed.",
+        "The snapshots and videos below compare the previous and updated predictions on the same frames. Yellow shows Before; green shows After. The selected examples illustrate how club head localization changes under blur."
+      ],
       "demo": {
         "before": "Before",
         "after": "After",
-        "modelTag": "{label} \u00b7 {model}",
+        "modelTag": "{label} · {model}",
         "listTitle": "Swing videos",
         "videoTitle": "Video comparison",
         "snapshots": {
-          "title": "Snapshot highlights",
-          "inspectionHint": "Hover to inspect a joint or connection.",
+          "title": "Difficult example snapshot highlights",
+          "inspectionHint": "Hover to inspect a club point or connection.",
           "carousel": "carousel",
-          "loading": "Loading snapshot highlights\u2026",
+          "loading": "Loading snapshot highlights…",
           "empty": "No snapshots have been selected yet.",
           "error": "Snapshot highlights could not be loaded. The video viewer is still available below.",
           "imageError": "This snapshot image could not be loaded.",
           "previous": "Previous snapshot",
           "next": "Next snapshot",
           "navigation": "Choose a snapshot",
-          "itemLabel": "Swing {video} \u00b7 Frame {frame}",
+          "itemLabel": "Swing {video} · Frame {frame}",
           "show": "Show swing {video}, frame {frame}",
           "frame": "Frame {frame}",
-          "position": "{current} / {total} \u00b7 Swing {video} \u00b7 Frame {frame}",
+          "position": "{current} / {total} · Swing {video} · Frame {frame}",
           "focus": "Focus: {joints}"
         },
         "creditLabel": "Video source:",
-        "creditLink": "Original Instagram post \u2197",
+        "creditLink": "Original Instagram post ↗",
         "viewLabel": "Camera view",
         "views": {
           "all": "All views",
@@ -89,24 +131,25 @@
         "stop": "Stop",
         "next": "Next frame",
         "end": "Jump to end",
-        "loading": "Loading swing\u2026",
+        "loading": "Loading swing…",
         "loadVideo": "Tap to load video",
-        "loadingDemo": "Loading the video demo\u2026",
-        "loadingList": "Loading video list\u2026",
+        "loadingDemo": "Loading the video demo…",
+        "loadingList": "Loading video list…",
         "ready": "Ready",
         "error": "This swing could not be loaded. Select a video to try again.",
         "empty": "No videos available.",
-        "keyboard": "Press Space to play or pause. Tap \u2190 / \u2192 to step one frame; hold to repeat.",
-        "inspectionHint": "Hover to inspect a joint or club point. Click to select; Shift-click to select multiple points or connections.",
+        "keyboard": "Press Space to play or pause. Tap ← / → to step one frame; hold to repeat.",
+        "inspectionHint": "Hover to inspect a club point. Click to select; Shift-click to select multiple points or connections.",
+        "legendHint": "Click or tap Before / After to show or hide each club overlay.",
         "panZoomLabel": "Linked pan and zoom",
         "zoomIn": "Zoom in",
         "zoomOut": "Zoom out",
         "zoomLevel": "Zoom level",
         "resetView": "Reset view",
         "panZoomHint": "Scroll or pinch to zoom; drag to pan when zoomed in.",
-        "skeletonLabel": "{view} skeleton",
-        "featureLabel": "{view} \u00b7 {feature}",
-        "connectionLabel": "{from} \u2014 {to}",
+        "skeletonLabel": "{view} club detection",
+        "featureLabel": "{view} · {feature}",
+        "connectionLabel": "{from} — {to}",
         "jointNames": {
           "nose": "Nose",
           "atlas": "Atlas",
