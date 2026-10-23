@@ -89,12 +89,14 @@ function addShade(viewport, entry, side) {
     const context = shade.getContext('2d');
     const fit = Math.min(width/entry.width, height/entry.height);
     context.scale(ratio, ratio);
+    // Shade the entire window, including space beyond the transformed image.
+    // Only the spotlight holes follow the source image's pan and zoom.
+    context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    context.fillRect(0, 0, width, height);
     context.translate(((1-state.zoom)/2+state.x)*width, ((1-state.zoom)/2+state.y)*height);
     context.scale(state.zoom, state.zoom);
     context.translate((width-entry.width*fit)/2, (height-entry.height*fit)/2);
     context.scale(fit, fit);
-    context.fillStyle = 'rgba(0, 0, 0, 0.4)';
-    context.fillRect(0, 0, entry.width, entry.height);
     context.globalCompositeOperation = 'destination-out';
     context.fillStyle = '#000';
     for (const [x, y] of ['before', 'after'].flatMap(model => spotlightPoints(entry[model], entry.joints))) {
