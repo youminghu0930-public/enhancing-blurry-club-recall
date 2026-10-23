@@ -1,0 +1,12 @@
+{
+    "0027":{
+        "130": {
+            "title":"Elbow flexion during a down-the-line downswing", 
+            "joints":["golf_club_head"],
+            "message_box":{
+                "before":"The general-purpose model underestimates the elbow bend, predicting a straighter arm than the reference pose.",
+                "after":"The golf-specific model better captures elbow flexion and arm alignment."
+            }
+        }
+    }
+}
