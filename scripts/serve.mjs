@@ -14,12 +14,17 @@ if (built && !fs.existsSync(path.join(root, 'index.html'))) {
 const port = Number(process.argv.slice(2).find(argument => /^\d+$/.test(argument)) || 8003);
 let dirty = true;
 fs.mkdirSync(path.join(root, 'materials/data'), { recursive: true });
+if (!built) {
+  const catalog = prepareData(root);
+  dirty = false;
+  console.log(`Prepared ${catalog.clips.length} videos and ${catalog.snapshots.length} snapshot images.`);
+}
 if (!built) fs.watch(path.join(root, 'materials/data'), { recursive: true }, (_, filename) => {
   const file = String(filename || '');
   if (file !== 'catalog.json' && !file.startsWith('.generated')) dirty = true;
 });
 if (!built) fs.watch(path.join(root, 'materials/content.json'), () => { dirty = true; });
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
 http.createServer((request, response) => {
   if (!['GET', 'HEAD'].includes(request.method)) { response.writeHead(405).end(); return; }
   let filename;

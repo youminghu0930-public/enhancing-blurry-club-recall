@@ -337,3 +337,9 @@ header[data-expanded=false] { width: 0; padding-inline: 0; border: 0; }
 /* Visibility eyes use three lashes and a solid pupil for recognition at small sizes. */
 .panel-heading .legend-model::before { content: ''; display: inline-block; width: 24px; height: 24px; margin-right: 6px; flex-shrink: 0; border: 0; border-radius: 0; mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M2%2013s3.5-7%2010-7%2010%207%2010%207-3.5%207-10%207S2%2013%202%2013ZM6%208%204%204M12%206V2M18%208l2-4%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2713%27%20r%3D%274%27%20fill%3D%27black%27%2F%3E%3C%2Fsvg%3E") center / contain no-repeat; }
 .panel-heading .legend-model[aria-pressed=false]::before { mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M2%2010s3.5%207%2010%207%2010-7%2010-7M6%2015l-2%204M12%2017v5M18%2015l2%204%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E"); }
+
+/* Technical narrative follows the revised portfolio template. */
+.scan-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.scan-list li { padding: 0; margin: 0; font-size: 16px; line-height: 1.65; }
+.scan-list strong { font-weight: 600; color: var(--accent); }
+.section-note { font-size: 13px; line-height: 1.65; color: var(--muted); margin-top: 18px; }

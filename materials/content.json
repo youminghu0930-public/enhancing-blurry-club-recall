@@ -1,9 +1,9 @@
 {
   "page": {
     "title": "Enhancing Blurry Club Recall",
-    "description": "Applying state-of-the-art segmentation and a custom heuristic augmentation method to improve blurred club head detection without changing inference speed.",
+    "description": "Applying state-of-the-art segmentation and heuristic blur synthesis to improve difficult blurred-club recall by approximately 30%, with unchanged inference speed.",
     "eyebrow": "Computer vision · Golf swing analysis",
-    "role": "My role: I applied a state-of-the-art segmentation model, designed a heuristic method to synthesize motion-blurred clubs, and built the augmentation pipeline that improved detection on difficult footage.",
+    "role": "My role: I applied a state-of-the-art segmentation model and developed a heuristic augmentation pipeline to improve blurred club head detection.",
     "navigationLabel": "Project sections",
     "navigationToggle": "Toggle section navigation",
     "banner": {
@@ -20,162 +20,193 @@
   },
   "sections": [
     {
-      "id": "goal",
-      "title": "Goal",
+      "id": "abstract",
+      "title": "Abstract",
+      "snapshots": true,
       "paragraphs": [
-        "Make club head detection more reliable under motion blur, especially in face-on footage and around impact, where rapid club movement makes detection difficult. These moments occupy only a small part of a swing but are critical for golf swing measurement.",
-        "The previous model could detect the club head in clearer frames but often missed it under blur. The goal was to improve recall across both high-quality footage and videos captured at lower frame rates or in poor lighting. Because missed detections were the larger practical problem, some loss of precision was considered acceptable."
-      ]
-    },
-    {
-      "id": "difficulty",
-      "title": "Challenges",
-      "paragraphs": [
-        "Blurred club images accounted for only about 5% of the available data. Manually selecting these rare frames was slow and costly, and collecting more footage would produce the same imbalance.",
-        "I needed a practical way to turn the existing dataset into more useful training examples. The implementation challenge was to isolate the club, synthesize varied levels of blur, and filter out low-quality results so the augmented data remained useful for training."
-      ]
-    },
-    {
-      "id": "accomplishment",
-      "title": "Contributions and Outcomes",
+        "The previous detector often missed blurred club heads near impact, a critical moment for swing analysis. I applied state-of-the-art segmentation and heuristic blur synthesis to at least double the club head training data after filtering. Difficult blurred-club recall improved by approximately 30%, with no substantial precision loss and unchanged inference speed."
+      ],
       "metrics": [
         {
-          "value": "≥2×",
-          "label": "Club head training examples after filtering"
+          "value": "≈30%",
+          "label": "Higher recall on difficult blurred-club cases"
         },
         {
-          "value": "≈30%",
-          "label": "Improvement on difficult examples"
+          "value": "≥2×",
+          "label": "Club head training data after filtering"
         },
         {
           "value": "Unchanged",
           "label": "Inference speed"
         }
-      ],
-      "items": [
-        "Applied state-of-the-art segmentation: I used a segmentation model to extract the club from existing frames, creating the components needed for targeted augmentation.",
-        "Designed a heuristic synthesis method: I developed a custom method to combine these components into motion-blurred club images. For each original frame, I generated three additional versions with mild, medium, and heavy blur to expand coverage of the failure cases.",
-        "Built the training-data pipeline: I generated the augmented examples and filtered out low-quality synthetic results. The resulting club head training data grew to at least twice its original size, using footage we already had.",
-        "Connected implementation to detection quality: Training with the augmented data enabled the final model to detect approximately 30% more difficult examples, with no substantial observed decrease in precision. The model architecture stayed the same, preserving inference speed."
       ]
     },
     {
-      "id": "influence",
-      "title": "Lasting Impact",
+      "id": "introduction",
+      "title": "Introduction",
+      "paragraphs": [
+        "Rapid club motion, especially in face-on footage and around impact, can blur the club head across multiple pixels. The previous detector handled clearer frames but often missed the club head in these difficult conditions. The target was higher recall across high-quality recordings and videos captured at lower frame rates or in poor lighting.",
+        "Blurred-club images made up only about 5% of the available data. Manually selecting these rare frames was inefficient, and collecting more footage would reproduce the same imbalance.",
+        "The working hypothesis was that targeted synthetic blur could expand coverage of these failure cases and improve recall without changing the detector architecture. Recall was the primary objective, with a modest precision trade-off considered acceptable."
+      ]
+    },
+    {
+      "id": "methods",
+      "title": "Methods",
       "subsections": [
         {
-          "title": "A practical solution to a data bottleneck",
+          "title": "Isolate the club with an existing model",
           "paragraphs": [
-            "I combined an available segmentation model with a task-specific heuristic method to address a concrete detector failure. This made it possible to expand rare blur cases from existing footage, reducing reliance on slow manual selection and additional data collection."
+            "To augment the moving object selectively, I used a state-of-the-art segmentation model to extract the club from existing frames. This supplied the components for synthesis and let me apply an established model to a task-specific data problem."
           ]
         },
         {
-          "title": "Improvement through training data",
+          "title": "Synthesize varied blur with a heuristic method",
           "paragraphs": [
-            "The main outcome was a more capable detector using the same architecture and inference budget. The observed improvement, with no substantial precision loss or observed overfitting, showed that the augmentation was useful for the difficult footage we evaluated."
+            "The extracted components became inputs to a custom heuristic synthesis method. For each original frame, I generated three additional versions with mild, medium, and heavy club blur, increasing exposure to difficult appearances rather than relying on rare real examples alone."
           ]
         },
         {
-          "title": "A concrete next iteration",
+          "title": "Filter outputs and train the same detector",
           "paragraphs": [
-            "I would improve the synthesis pipeline by using an inpainting model to reconstruct the background where the original club was removed. Cleaner backgrounds could reduce compositing artifacts and make the augmented images more realistic."
+            "I filtered out low-quality synthetic results before using the augmented data for training. The retained club head training data was at least twice the original size. Keeping the detector architecture unchanged made training-data coverage the main intervention and preserved inference speed."
           ]
         }
-      ]
+      ],
+      "note": "Proprietary synthesis heuristics, filtering rules, and training settings are omitted; the description focuses on the problem each implementation step addresses."
     },
     {
       "id": "result",
       "title": "Results",
       "paragraphs": [
-        "The segmentation-guided augmentation pipeline enabled the final model to detect approximately 30% more difficult examples, with no substantial observed loss of precision. This improvement came from the training-data workflow while retaining the same model architecture and inference speed.",
-        "The snapshots and videos below compare the previous and updated predictions on the same frames. Yellow shows Before; green shows After. The selected examples illustrate how club head localization changes under blur."
+        "Difficult blurred-club recall improved by approximately 30% over the previous model, with no substantial observed precision decrease. The detector architecture and inference speed remained unchanged."
       ],
-      "demo": {
-        "before": "Before",
-        "after": "After",
-        "modelTag": "{label} · {model}",
-        "listTitle": "Swing videos",
-        "videoTitle": "Video comparison",
-        "snapshots": {
-          "title": "Difficult example snapshot highlights",
-          "inspectionHint": "Hover to inspect a club point or connection.",
-          "carousel": "carousel",
-          "loading": "Loading snapshot highlights…",
-          "empty": "No snapshots have been selected yet.",
-          "error": "Snapshot highlights could not be loaded. The video viewer is still available below.",
-          "imageError": "This snapshot image could not be loaded.",
-          "previous": "Previous snapshot",
-          "next": "Next snapshot",
-          "navigation": "Choose a snapshot",
-          "itemLabel": "Swing {video} · Frame {frame}",
-          "show": "Show swing {video}, frame {frame}",
-          "frame": "Frame {frame}",
-          "position": "{current} / {total} · Swing {video} · Frame {frame}",
-          "focus": "Focus: {joints}"
+      "note": "Yellow shows the previous predictions; green shows the updated predictions. Selected examples illustrate localization behavior and are not a standalone recall benchmark."
+    },
+    {
+      "id": "discussion",
+      "title": "Discussion",
+      "subsections": [
+        {
+          "title": "What the improvement means",
+          "paragraphs": [
+            "Compared with the previous detector, the updated model recovered more difficult blurred-club cases after targeted dataset augmentation. The result supports segmentation-guided synthesis as a practical way to address underrepresented failure modes using an existing model and task-specific heuristics.",
+            "No overfitting was observed. Together with the preserved precision, this suggests that the generated examples captured useful cues from real blur, rather than only synthetic artifacts. It does not establish performance under every recording condition."
+          ]
         },
-        "creditLabel": "Video source:",
-        "creditLink": "Original Instagram post ↗",
-        "viewLabel": "Camera view",
-        "views": {
-          "all": "All views",
-          "face-on": "Face-on",
-          "down-the-line": "Down the line"
+        {
+          "title": "Limitations",
+          "paragraphs": [
+            "The approximately 30% improvement is reported relative to the previous detector on difficult blurred-club cases. Evaluation set size, recall thresholds, and the detailed protocol are not presented here. The selected examples do not establish performance across every golfer, camera view, or lighting condition."
+          ]
         },
-        "clipLabel": "Swing {id}",
-        "videoCount": "{count} videos",
-        "frame": "Frame {current} / {total}",
-        "slider": "Video frame",
-        "start": "Jump to start",
-        "previous": "Previous frame",
-        "play": "Play",
-        "stop": "Stop",
-        "next": "Next frame",
-        "end": "Jump to end",
-        "loading": "Loading swing…",
-        "loadVideo": "Tap to load video",
-        "loadingDemo": "Loading the video demo…",
-        "loadingList": "Loading video list…",
-        "ready": "Ready",
-        "error": "This swing could not be loaded. Select a video to try again.",
-        "empty": "No videos available.",
-        "keyboard": "Press Space to play or pause. Tap ← / → to step one frame; hold to repeat.",
-        "inspectionHint": "Hover to inspect a club point. Click to select; Shift-click to select multiple points or connections.",
-        "legendHint": "Click or tap Before / After to show or hide each club overlay.",
-        "panZoomLabel": "Linked pan and zoom",
-        "zoomIn": "Zoom in",
-        "zoomOut": "Zoom out",
-        "zoomLevel": "Zoom level",
-        "resetView": "Reset view",
-        "panZoomHint": "Scroll or pinch to zoom; drag to pan when zoomed in.",
-        "skeletonLabel": "{view} club detection",
-        "featureLabel": "{view} · {feature}",
-        "connectionLabel": "{from} — {to}",
-        "jointNames": {
-          "nose": "Nose",
-          "atlas": "Atlas",
-          "top_head": "Top of head",
-          "left_eye": "Left eye",
-          "right_eye": "Right eye",
-          "left_ear": "Left ear",
-          "right_ear": "Right ear",
-          "left_shoulder": "Left shoulder",
-          "right_shoulder": "Right shoulder",
-          "left_elbow": "Left elbow",
-          "right_elbow": "Right elbow",
-          "left_wrist": "Left wrist",
-          "right_wrist": "Right wrist",
-          "left_hip": "Left hip",
-          "right_hip": "Right hip",
-          "left_knee": "Left knee",
-          "right_knee": "Right knee",
-          "left_ankle": "Left ankle",
-          "right_ankle": "Right ankle",
-          "golf_club_grip": "Club grip",
-          "golf_club_shaft": "Club shaft",
-          "golf_club_heel": "Club heel",
-          "golf_club_head": "Club head"
+        {
+          "title": "A repeatable augmentation stage for MLOps",
+          "paragraphs": [
+            "The implemented synthesis and filtering pipeline turns existing footage into additional training examples with controlled blur severity. This gives model iteration a repeatable data-preparation stage while retaining the same inference architecture.",
+            "For CI/CD integration, versioned source data and synthesis settings could be paired with automated data checks and evaluation gates for difficult-case recall, precision, and inference speed. This would help the team validate augmentation changes before promoting a model."
+          ]
+        },
+        {
+          "title": "Next iteration: reconstruct the background",
+          "paragraphs": [
+            "An inpainting model could fill the region where the original club was segmented out, producing a cleaner background for synthesis. This could reduce compositing artifacts and make the generated blur more realistic. A subsequent evaluation should check whether that added realism improves difficult-case recall while preserving precision."
+          ]
         }
-      }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "paragraphs": [
+        "By applying state-of-the-art segmentation and designing a heuristic augmentation pipeline, I improved difficult blurred-club recall by approximately 30% with no substantial precision loss or change in inference speed. The project demonstrates hands-on model integration and targeted data engineering."
+      ]
     }
-  ]
+  ],
+  "demo": {
+    "before": "Before",
+    "after": "After",
+    "modelTag": "{label} · {model}",
+    "listTitle": "Swing videos",
+    "videoTitle": "Video comparison",
+    "snapshots": {
+      "title": "Difficult blurred-club examples",
+      "inspectionHint": "Hover to inspect a club point or connection.",
+      "carousel": "carousel",
+      "loading": "Loading snapshot highlights…",
+      "empty": "No snapshots have been selected yet.",
+      "error": "Snapshot images could not be loaded. Please reload the page.",
+      "imageError": "This snapshot image could not be loaded.",
+      "previous": "Previous snapshot",
+      "next": "Next snapshot",
+      "navigation": "Choose a snapshot",
+      "itemLabel": "Swing {video} · Frame {frame}",
+      "show": "Show swing {video}, frame {frame}",
+      "frame": "Frame {frame}",
+      "position": "{current} / {total} · Swing {video} · Frame {frame}",
+      "focus": "Focus: {joints}"
+    },
+    "creditLabel": "Video source:",
+    "creditLink": "Original Instagram post ↗",
+    "viewLabel": "Camera view",
+    "views": {
+      "all": "All views",
+      "face-on": "Face-on",
+      "down-the-line": "Down the line"
+    },
+    "clipLabel": "Swing {id}",
+    "videoCount": "{count} videos",
+    "frame": "Frame {current} / {total}",
+    "slider": "Video frame",
+    "start": "Jump to start",
+    "previous": "Previous frame",
+    "play": "Play",
+    "stop": "Stop",
+    "next": "Next frame",
+    "end": "Jump to end",
+    "loading": "Loading swing…",
+    "loadVideo": "Tap to load video",
+    "loadingDemo": "Loading the video demo…",
+    "loadingList": "Loading video list…",
+    "ready": "Ready",
+    "error": "This swing could not be loaded. Select a video to try again.",
+    "empty": "No videos available.",
+    "keyboard": "Press Space to play or pause. Tap ← / → to step one frame; hold to repeat.",
+    "inspectionHint": "Hover to inspect a club point. Click to select; Shift-click to select multiple points or connections.",
+    "legendHint": "Click or tap Before / After to show or hide each club overlay.",
+    "panZoomLabel": "Linked pan and zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomLevel": "Zoom level",
+    "resetView": "Reset view",
+    "panZoomHint": "Scroll or pinch to zoom; drag to pan when zoomed in.",
+    "skeletonLabel": "{view} club detection",
+    "featureLabel": "{view} · {feature}",
+    "connectionLabel": "{from} — {to}",
+    "jointNames": {
+      "nose": "Nose",
+      "atlas": "Atlas",
+      "top_head": "Top of head",
+      "left_eye": "Left eye",
+      "right_eye": "Right eye",
+      "left_ear": "Left ear",
+      "right_ear": "Right ear",
+      "left_shoulder": "Left shoulder",
+      "right_shoulder": "Right shoulder",
+      "left_elbow": "Left elbow",
+      "right_elbow": "Right elbow",
+      "left_wrist": "Left wrist",
+      "right_wrist": "Right wrist",
+      "left_hip": "Left hip",
+      "right_hip": "Right hip",
+      "left_knee": "Left knee",
+      "right_knee": "Right knee",
+      "left_ankle": "Left ankle",
+      "right_ankle": "Right ankle",
+      "golf_club_grip": "Club grip",
+      "golf_club_shaft": "Club shaft",
+      "golf_club_heel": "Club heel",
+      "golf_club_head": "Club head"
+    }
+  }
 }
