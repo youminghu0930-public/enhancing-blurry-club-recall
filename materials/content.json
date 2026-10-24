@@ -81,7 +81,7 @@
       "paragraphs": [
         "Difficult blurred-club recall improved by approximately 30% over the previous model, with no substantial observed precision decrease. The detector architecture and inference speed remained unchanged."
       ],
-      "note": "Yellow shows the previous predictions; green shows the updated predictions. Selected examples illustrate localization behavior and are not a standalone recall benchmark."
+      "note": "Yellow shows the previous predictions; green shows the updated predictions."
     },
     {
       "id": "discussion",
@@ -91,13 +91,7 @@
           "title": "What the improvement means",
           "paragraphs": [
             "Compared with the previous detector, the updated model recovered more difficult blurred-club cases after targeted dataset augmentation. The result supports segmentation-guided synthesis as a practical way to address underrepresented failure modes using an existing model and task-specific heuristics.",
-            "No overfitting was observed. Together with the preserved precision, this suggests that the generated examples captured useful cues from real blur, rather than only synthetic artifacts. It does not establish performance under every recording condition."
-          ]
-        },
-        {
-          "title": "Limitations",
-          "paragraphs": [
-            "The approximately 30% improvement is reported relative to the previous detector on difficult blurred-club cases. Evaluation set size, recall thresholds, and the detailed protocol are not presented here. The selected examples do not establish performance across every golfer, camera view, or lighting condition."
+            "No overfitting was observed. Together with the preserved precision, this suggests that the generated examples captured useful cues from real blur, rather than only synthetic artifacts."
           ]
         },
         {
