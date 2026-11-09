@@ -1,3 +1,4 @@
+import { createViewerInfo } from './viewer-info.js';
 import { skeletonView } from './snapshot-framing.js';
 import { createPoseOverlay } from './pose-overlay.js';
 import { snapshotItems, spotlightPoints } from './snapshot-data.js';
@@ -236,6 +237,7 @@ export async function mountSnapshots(root, copy, { warmAfter = Promise.resolve()
     return card;
   });
   shell.append(stage, previous, next);
+  root.previousElementSibling?.append(createViewerInfo('snapshot-instructions',labels.instructionsLabel,labels.instructions,'section-info'));
   const dots = make('div', undefined, 'snapshot-dots');
   dots.setAttribute('role', 'group'); dots.setAttribute('aria-label', labels.navigation);
   const dotButtons = snapshots.map((entry, index) => {
@@ -245,7 +247,7 @@ export async function mountSnapshots(root, copy, { warmAfter = Promise.resolve()
   });
   const details = make('div', undefined, 'snapshot-details');
   const credit = make('p', undefined, 'snapshot-source');
-  details.append(credit, make('p', copy.legendHint, 'keyboard-hint'), make('p', copy.panZoomHint, 'keyboard-hint'), make('p', labels.inspectionHint, 'keyboard-hint'));
+  details.append(credit);
   root.replaceChildren(shell, dots, details);
 
   const count = cards.length;

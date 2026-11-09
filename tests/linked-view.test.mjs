@@ -2,6 +2,36 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { zoomView, constrainView, focusedView, installLinkedView } from '../linked-view.js';
 
+test('wheel, drag, and touch pinch update linked scenes and overlay state together', () => {
+  const previousObserver = globalThis.ResizeObserver;
+  globalThis.ResizeObserver = class { observe() {} };
+  try {
+    const viewports = Array.from({ length: 2 }, () => Object.assign(new EventTarget(), {
+      clientWidth: 400, clientHeight: 400, classList: { toggle() {} }, dataset: {},
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 400 }),
+      setPointerCapture() {}, hasPointerCapture: () => true,
+    }));
+    const scenes = viewports.map(() => ({ style: {} }));
+    let state;
+    const view = installLinkedView(viewports, scenes, next => { state = next; });
+    const dispatch = (type, properties) => viewports[0].dispatchEvent(Object.assign(new Event(type, { cancelable: true }), properties));
+    assert.equal(dispatch('wheel', { deltaY: -100, deltaMode: 0, clientX: 200, clientY: 200 }), false);
+    assert.ok(state.zoom > 1);
+    dispatch('pointerdown', { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 200, clientY: 200 });
+    dispatch('pointermove', { pointerId: 1, clientX: 220, clientY: 210 });
+    assert.ok(state.x > 0 && state.y > 0);
+    assert.equal(scenes[0].style.transform, scenes[1].style.transform);
+    dispatch('pointerup', { pointerId: 1 });
+    view.reset();
+    dispatch('pointerdown', { pointerId: 2, pointerType: 'touch', clientX: 150, clientY: 200 });
+    dispatch('pointerdown', { pointerId: 3, pointerType: 'touch', clientX: 250, clientY: 200 });
+    dispatch('pointermove', { pointerId: 3, clientX: 300, clientY: 200 });
+    assert.equal(state.zoom, 1.5);
+    assert.equal(viewports[0].dataset.zoom, viewports[1].dataset.zoom);
+    assert.equal(scenes[0].style.transform, scenes[1].style.transform);
+  } finally { globalThis.ResizeObserver = previousObserver; }
+});
+
 test('zoom preserves the source point under the cursor', () => {
   const state = { zoom: 2, x: .1, y: -.15 }, anchor = { x: .3, y: -.2 };
   const result = zoomView(state, 3, anchor);

@@ -122,14 +122,14 @@ async function renderPage() {
     if (content.snapshots || content.id==='result') {
       const copy = demoCopy;
       if (content.snapshots) {
-        section.append(element('h3', copy.snapshots.title, 'result-subheading'));
+        section.append(viewerHeading(copy.snapshots.title));
         const snapshots = element('div', undefined, 'snapshot-demo');
         const loading = element('p', copy.snapshots.loading, 'demo-loading');
         loading.setAttribute('role', 'status'); snapshots.append(loading); section.append(snapshots);
         demos.push({ demo: snapshots, copy, modulePath: './snapshot-viewer.js', mount: 'mountSnapshots', error: copy.snapshots.error });
       }
       if(content.id==='result') {
-        section.append(element('h3',copy.videoTitle,'result-subheading'));
+        section.append(viewerHeading(copy.videoTitle));
         const demo = element('div', undefined, 'demo');
         const loading = element('p', copy.loadingDemo, 'demo-loading');
         loading.setAttribute('role', 'status');
@@ -184,6 +184,12 @@ function scanItem(text) {
   if(split>0) item.append(element('strong',text.slice(0,split+1)),document.createTextNode(text.slice(split+1)));
   else item.textContent=text;
   return item;
+}
+
+function viewerHeading(text) {
+  const row=element('div',undefined,'viewer-section-heading');
+  row.append(element('h3',text,'result-subheading'));
+  return row;
 }
 
 renderPage().catch(error => {
